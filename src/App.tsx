@@ -7,7 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
-import SimpleAdmin from "./pages/admin/SimpleAdmin";
+import SimpleAdmin from "./pages/SimpleAdmin";
 
 const queryClient = new QueryClient();
 

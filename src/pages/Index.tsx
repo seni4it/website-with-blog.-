@@ -282,14 +282,6 @@ const Index = () => {
                 <Star className="w-4 h-4 text-primary" />
                 Testimonials
               </button>
-              <a 
-                href="/blog"
-                onClick={() => setShowMobileMenu(false)}
-                className="text-left text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 transition-colors py-3 px-3 rounded flex items-center gap-3"
-              >
-                <FileText className="w-4 h-4 text-primary" />
-                Blog
-              </a>
               <button 
                 onClick={() => {
                   document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth' });

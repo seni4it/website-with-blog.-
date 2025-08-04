@@ -7,22 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Search, Clock, User, ArrowLeft } from "lucide-react";
 import articlesData from "@/data/articles.json";
 
-const categories = [
-  "All Articles",
-  "Clinical Cases",
-  "Clinical Techniques", 
-  "Technology",
-  "Patient Education",
-  "Practice Management"
-];
-
 const Blog = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All Articles");
   const [articles, setArticles] = useState(articlesData.articles.filter(a => a.status === 'published'));
 
   useEffect(() => {
-    // Filter articles based on search and category
     let filtered = articlesData.articles.filter(a => a.status === 'published');
     
     if (searchQuery) {
@@ -32,16 +21,11 @@ const Blog = () => {
       );
     }
     
-    if (selectedCategory !== "All Articles") {
-      filtered = filtered.filter(article => article.category === selectedCategory);
-    }
-    
     setArticles(filtered);
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
-      {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
@@ -58,11 +42,10 @@ const Blog = () => {
               Clinical Blog
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Advanced endodontic education, clinical cases, and professional insights for dental excellence
+              Advanced endodontic education and professional insights
             </p>
           </div>
 
-          {/* Search and Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -74,28 +57,14 @@ const Blog = () => {
                 className="pl-10"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="whitespace-nowrap"
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Articles Grid */}
       <div className="container max-w-6xl mx-auto px-4 py-8">
         {articles.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground text-lg">No articles found matching your search criteria.</p>
+            <p className="text-muted-foreground text-lg">No articles found.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
