@@ -1,0 +1,232 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dr. Semion Roitman brand colors - Endodontics course landing page
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 210 24% 16%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 210 24% 16%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 24% 16%;
+
+    /* Brand teal/turquoise from Dr. Roitman's brand book */
+    --primary: 172 100% 32%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 172 100% 45%;
+
+    /* Brand orange accent */
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 210 24% 16%;
+
+    --muted: 210 40% 98%;
+    --muted-foreground: 215 16% 47%;
+
+    /* Brand orange accent for CTAs */
+    --accent: 33 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --accent-glow: 33 100% 65%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 172 100% 32%;
+
+    /* Brand gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(172 100% 32%), hsl(172 100% 45%));
+    --gradient-hero: linear-gradient(135deg, hsl(172 100% 32%) 0%, hsl(172 100% 40%) 100%);
+    --gradient-cta: linear-gradient(135deg, hsl(33 100% 50%) 0%, hsl(33 100% 60%) 100%);
+
+    /* Brand shadows */
+    --shadow-brand: 0 10px 30px -10px hsl(172 100% 32% / 0.3);
+    --shadow-glow: 0 0 40px hsl(172 100% 45% / 0.2);
+    --shadow-cta: 0 8px 25px -8px hsl(33 100% 50% / 0.4);
+
+    /* Professional transitions */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 210 24% 6%;
+    --foreground: 0 0% 98%;
+
+    --card: 210 24% 8%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 210 24% 8%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 172 100% 45%;
+    --primary-foreground: 210 24% 6%;
+    --primary-glow: 172 100% 60%;
+
+    --secondary: 210 24% 12%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 210 24% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 33 100% 60%;
+    --accent-foreground: 210 24% 6%;
+    --accent-glow: 33 100% 75%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 210 24% 15%;
+    --input: 210 24% 15%;
+    --ring: 172 100% 45%;
+
+    /* Dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(172 100% 45%), hsl(172 100% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(172 100% 45%) 0%, hsl(172 100% 50%) 100%);
+    --gradient-cta: linear-gradient(135deg, hsl(33 100% 60%) 0%, hsl(33 100% 70%) 100%);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Professional medical typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold;
+  }
+
+  /* Smooth animations for brand interface */
+  button, .card, .hero-section {
+    transition: var(--transition-smooth);
+  }
+
+  /* Brand professional effects */
+  .brand-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .brand-shadow {
+    box-shadow: var(--shadow-brand);
+  }
+
+  .cta-shadow {
+    box-shadow: var(--shadow-cta);
+  }
+
+  /* Brand gradient backgrounds */
+  .gradient-primary {
+    background: var(--gradient-primary);
+  }
+
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+
+  .gradient-cta {
+    background: var(--gradient-cta);
+  }
+}
+
+/* Scroll-triggered animations */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.scroll-animate {
+  opacity: 0;
+  transition: all 0.6s ease-out;
+}
+
+.scroll-animate.animate-slide-up {
+  animation: slideInUp 0.8s ease-out forwards;
+}
+
+.scroll-animate.animate-slide-left {
+  animation: slideInLeft 0.8s ease-out forwards;
+}
+
+.scroll-animate.animate-slide-right {
+  animation: slideInRight 0.8s ease-out forwards;
+}
+
+.scroll-animate.animate-fade-scale {
+  animation: fadeInScale 0.8s ease-out forwards;
+}

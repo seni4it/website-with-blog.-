@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canal Localization Masterclass</title>
+    <meta name="description" content="Master Canal Localization with Dr. Roitman" />
+    <meta name="author" content="LearnEndo.io" />
+    
+    <!-- Google Analytics - Conditional Loading -->
+    <script>
+      // Initialize dataLayer and gtag function regardless of consent
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Function to load Google Analytics
+      function loadGoogleAnalytics() {
+        if (!document.querySelector('script[src*="gtag/js"]')) {
+          const script = document.createElement('script');
+          script.async = true;
+          script.src = 'https://www.googletagmanager.com/gtag/js?id=G-GWBDNMRWFS';
+          document.head.appendChild(script);
+          
+          script.onload = function() {
+            gtag('js', new Date());
+            gtag('config', 'G-GWBDNMRWFS', {
+              'anonymize_ip': true,
+              'respect_dnt': true
+            });
+            console.log('Google Analytics loaded with consent');
+          };
+        }
+      }
+      
+      // Check for existing consent on page load
+      document.addEventListener('DOMContentLoaded', function() {
+        const cookieConsent = localStorage.getItem('cookieConsent');
+        if (cookieConsent === 'accepted' || cookieConsent === 'essentials-plus-analytics') {
+          loadGoogleAnalytics();
+        }
+      });
+      
+      // Global function to enable analytics (called by React components)
+      window.enableGoogleAnalytics = loadGoogleAnalytics;
+    </script>
+
+    <meta property="og:title" content="endo-elevate-hub" />
+    <meta property="og:description" content="Lovable Generated Project" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lovable_dev" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
