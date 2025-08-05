@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Calendar, Clock, Users, Video, RotateCcw, CheckCircle, Award, Target, AlertTriangle, Microscope, GraduationCap, FileText, Phone, Timer, Shield, TrendingUp, Star, ArrowRight, Play, Zap, MessageCircle, Instagram, Send, X } from "lucide-react";
 import CalendlyWidget from "@/components/CalendlyWidget";
 import { ToothLocationIcon, ToothSettingsIcon, ToothKeyIcon, ToothCareIcon } from "@/components/DentalIcons";
+import { getHomePageContent, HomePageContent } from "@/lib/homePageContent";
 
 const Index = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -25,6 +26,7 @@ const Index = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [cookiesAccepted, setCookiesAccepted] = useState(false);
+  const [homePageContent, setHomePageContent] = useState<HomePageContent | null>(null);
 
   // Countdown timer effect
   useEffect(() => {
@@ -92,6 +94,29 @@ const Index = () => {
     } else {
       const hasConsent = cookieConsent === 'accepted' || cookieConsent === 'essentials-plus-analytics';
       setCookiesAccepted(hasConsent);
+    }
+    
+    // Load home page content
+    const content = getHomePageContent();
+    setHomePageContent(content);
+    
+    // Check for admin preview mode
+    const urlParams = new URLSearchParams(window.location.search);
+    const isAdminPreview = urlParams.get('preview') === 'admin';
+    
+    if (isAdminPreview) {
+      // Listen for admin updates
+      const adminData = sessionStorage.getItem('adminPreviewData');
+      if (adminData) {
+        try {
+          const { pageType, content: adminContent } = JSON.parse(adminData);
+          if (pageType === 'home') {
+            setHomePageContent(adminContent);
+          }
+        } catch (error) {
+          console.error('Error parsing admin preview data:', error);
+        }
+      }
     }
   }, []);
 
