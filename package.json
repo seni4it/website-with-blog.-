@@ -8,6 +8,8 @@
     "dev:tina": "tinacms dev -c \"vite\"",
     "build": "vite build",
     "build:dev": "tinacms build && vite build --mode development",
+    "build:production": "node scripts/prepare-production.js && vite build --mode production && node scripts/cleanup-production.js",
+    "publish-website": "npm run build:production && echo '\n✅ Production build complete! Deploy the dist/ folder to your hosting service.\n🚫 Admin panel excluded from production build for security.\n'",
     "lint": "eslint .",
     "preview": "vite preview",
     "check-badge": "grep -n 'bg-destructive.*LIMITED TIME' src/pages/Index.tsx || echo 'WARNING: LIMITED TIME badge missing red background!'",

@@ -1,206 +1,181 @@
-// GitHub integration for change tracking and verification
-// This provides audit trail and backup of all content changes
-
-interface GitHubCommit {
-  message: string;
-  content: any;
-  timestamp: string;
-  author: string;
-}
-
-interface ChangeLog {
+// Local change management and publishing system
+interface ContentSnapshot {
   id: string;
-  type: 'blog_post' | 'blog_page' | 'site_content';
-  action: 'create' | 'update' | 'delete';
-  content: any;
-  timestamp: string;
-  author: string;
-  githubCommitId?: string;
-  approved: boolean;
+  timestamp: number;
+  description: string;
+  blogContent: any;
+  homeContent: any;
+  posts: any[];
 }
 
-class GitHubContentManager {
-  private changes: ChangeLog[] = [];
-  private readonly GITHUB_REPO = 'your-username/website-content'; // Configure this
-  private readonly CHANGE_LOG_KEY = 'contentChanges';
+export class ContentManager {
+  private static instance: ContentManager;
+  private changeHistory: ContentSnapshot[] = [];
+  private currentIndex: number = -1;
+  private maxHistory: number = 50; // Keep last 50 changes
+
+  static getInstance(): ContentManager {
+    if (!ContentManager.instance) {
+      ContentManager.instance = new ContentManager();
+    }
+    return ContentManager.instance;
+  }
 
   constructor() {
-    this.loadChanges();
+    this.loadHistory();
   }
 
-  // Load changes from localStorage
-  private loadChanges(): void {
-    const stored = localStorage.getItem(this.CHANGE_LOG_KEY);
-    if (stored) {
-      try {
-        this.changes = JSON.parse(stored);
-      } catch (error) {
-        console.error('Error loading changes:', error);
-        this.changes = [];
-      }
+  private saveHistory() {
+    localStorage.setItem('contentHistory', JSON.stringify({
+      history: this.changeHistory,
+      currentIndex: this.currentIndex
+    }));
+  }
+
+  private loadHistory() {
+    const saved = localStorage.getItem('contentHistory');
+    if (saved) {
+      const data = JSON.parse(saved);
+      this.changeHistory = data.history || [];
+      this.currentIndex = data.currentIndex || -1;
     }
   }
 
-  // Save changes to localStorage
-  private saveChanges(): void {
-    localStorage.setItem(this.CHANGE_LOG_KEY, JSON.stringify(this.changes));
-  }
-
-  // Generate change ID
-  private generateChangeId(): string {
-    return `change_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-  }
-
-  // Create a change record
-  public recordChange(
-    type: ChangeLog['type'],
-    action: ChangeLog['action'],
-    content: any,
-    author: string = 'Dr. Roitman'
-  ): string {
-    const changeId = this.generateChangeId();
+  saveSnapshot(description: string, blogContent: any, homeContent: any, posts: any[]) {
+    // Remove any changes after current index (when undoing then making new changes)
+    this.changeHistory = this.changeHistory.slice(0, this.currentIndex + 1);
     
-    const change: ChangeLog = {
-      id: changeId,
-      type,
-      action,
-      content: JSON.parse(JSON.stringify(content)), // Deep clone
-      timestamp: new Date().toISOString(),
-      author,
-      approved: false // Requires approval before going live
+    const snapshot: ContentSnapshot = {
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      description,
+      blogContent: JSON.parse(JSON.stringify(blogContent)),
+      homeContent: JSON.parse(JSON.stringify(homeContent)),
+      posts: JSON.parse(JSON.stringify(posts))
     };
 
-    this.changes.unshift(change); // Add to beginning
-    this.saveChanges();
+    this.changeHistory.push(snapshot);
+    this.currentIndex = this.changeHistory.length - 1;
 
-    // In production, this would trigger a GitHub webhook or API call
-    this.simulateGitHubPush(change);
-
-    return changeId;
-  }
-
-  // Simulate GitHub push (in production, this would be real GitHub API)
-  private simulateGitHubPush(change: ChangeLog): void {
-    console.log('📝 Content change recorded:', {
-      id: change.id,
-      type: change.type,
-      action: change.action,
-      timestamp: change.timestamp,
-      author: change.author
-    });
-
-    // Simulate GitHub commit creation
-    setTimeout(() => {
-      const commitId = `commit_${Math.random().toString(36).substring(2)}`;
-      this.updateChangeWithCommit(change.id, commitId);
-    }, 1000);
-  }
-
-  // Update change with GitHub commit ID
-  private updateChangeWithCommit(changeId: string, commitId: string): void {
-    const change = this.changes.find(c => c.id === changeId);
-    if (change) {
-      change.githubCommitId = commitId;
-      this.saveChanges();
-      console.log('✅ GitHub commit created:', commitId);
+    // Keep only last maxHistory items
+    if (this.changeHistory.length > this.maxHistory) {
+      this.changeHistory = this.changeHistory.slice(-this.maxHistory);
+      this.currentIndex = this.changeHistory.length - 1;
     }
+
+    this.saveHistory();
   }
 
-  // Get all changes
-  public getChanges(): ChangeLog[] {
-    return [...this.changes];
+  canUndo(): boolean {
+    return this.currentIndex > 0;
   }
 
-  // Get pending changes (not approved)
-  public getPendingChanges(): ChangeLog[] {
-    return this.changes.filter(c => !c.approved);
+  canRedo(): boolean {
+    return this.currentIndex < this.changeHistory.length - 1;
   }
 
-  // Approve a change
-  public approveChange(changeId: string): boolean {
-    const change = this.changes.find(c => c.id === changeId);
-    if (change) {
-      change.approved = true;
-      this.saveChanges();
-      console.log('✅ Change approved:', changeId);
-      return true;
+  undo(): ContentSnapshot | null {
+    if (this.canUndo()) {
+      this.currentIndex--;
+      this.saveHistory();
+      return this.changeHistory[this.currentIndex];
     }
-    return false;
+    return null;
   }
 
-  // Reject and rollback a change
-  public rejectChange(changeId: string): boolean {
-    const changeIndex = this.changes.findIndex(c => c.id === changeId);
-    if (changeIndex !== -1) {
-      const change = this.changes[changeIndex];
-      this.changes.splice(changeIndex, 1);
-      this.saveChanges();
-      console.log('❌ Change rejected and removed:', changeId);
-      return true;
+  redo(): ContentSnapshot | null {
+    if (this.canRedo()) {
+      this.currentIndex++;
+      this.saveHistory();
+      return this.changeHistory[this.currentIndex];
     }
-    return false;
+    return null;
   }
 
-  // Generate content backup for GitHub
-  public generateBackup(): string {
-    const backup = {
-      timestamp: new Date().toISOString(),
-      changes: this.changes,
-      metadata: {
-        totalChanges: this.changes.length,
-        pendingChanges: this.getPendingChanges().length,
-        approvedChanges: this.changes.filter(c => c.approved).length
-      }
-    };
-
-    return JSON.stringify(backup, null, 2);
+  getHistory(): ContentSnapshot[] {
+    return [...this.changeHistory];
   }
 
-  // Restore from backup
-  public restoreFromBackup(backupData: string): boolean {
-    try {
-      const backup = JSON.parse(backupData);
-      if (backup.changes && Array.isArray(backup.changes)) {
-        this.changes = backup.changes;
-        this.saveChanges();
-        console.log('✅ Restored from backup');
-        return true;
-      }
-    } catch (error) {
-      console.error('❌ Error restoring backup:', error);
+  getCurrentSnapshot(): ContentSnapshot | null {
+    if (this.currentIndex >= 0 && this.currentIndex < this.changeHistory.length) {
+      return this.changeHistory[this.currentIndex];
     }
-    return false;
-  }
-
-  // Get change statistics
-  public getStatistics() {
-    const total = this.changes.length;
-    const approved = this.changes.filter(c => c.approved).length;
-    const pending = this.changes.filter(c => !c.approved).length;
-    
-    const byType = this.changes.reduce((acc, change) => {
-      acc[change.type] = (acc[change.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const byAction = this.changes.reduce((acc, change) => {
-      acc[change.action] = (acc[change.action] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      total,
-      approved,
-      pending,
-      approvalRate: total > 0 ? Math.round((approved / total) * 100) : 0,
-      byType,
-      byAction,
-      lastChange: this.changes[0]?.timestamp || null
-    };
+    return null;
   }
 }
 
-export const githubContentManager = new GitHubContentManager();
+// Publishing functions
+export const publishWebsite = async () => {
+  try {
+    // Show publishing instructions
+    const instructions = `
+Publishing your website:
 
-// Export types for use in components
-export type { ChangeLog, GitHubCommit };
+1. Building production version (without admin panel)
+2. Run: npm run publish-website
+3. Upload dist/ folder to hosting
+4. Push changes to GitHub
+
+Commands copied to clipboard!
+`;
+
+    console.log(instructions);
+    
+    if (navigator.clipboard) {
+      try {
+        const commands = `npm run publish-website
+git add .
+git commit -m "Publish website - ${new Date().toLocaleDateString()}"
+git push origin main`;
+        
+        await navigator.clipboard.writeText(commands);
+        return { 
+          success: true, 
+          message: 'Publishing commands copied! Run in Terminal to publish your website.' 
+        };
+      } catch (e) {
+        return { 
+          success: true, 
+          message: 'Run: npm run publish-website then push to Git' 
+        };
+      }
+    }
+    
+    return { 
+      success: true, 
+      message: 'Run: npm run publish-website then git add . && git commit -m "Publish" && git push' 
+    };
+  } catch (error) {
+    console.error('Publish error:', error);
+    return { 
+      success: false, 
+      message: 'Please run manually: npm run publish-website' 
+    };
+  }
+};
+
+export const discardChanges = async () => {
+  try {
+    const contentManager = ContentManager.getInstance();
+    const undoResult = contentManager.undo();
+    
+    if (undoResult) {
+      return { 
+        success: true, 
+        message: 'Changes discarded. Reverted to previous version.',
+        snapshot: undoResult
+      };
+    } else {
+      return { 
+        success: false, 
+        message: 'No changes to discard.' 
+      };
+    }
+  } catch (error) {
+    console.error('Discard error:', error);
+    return { 
+      success: false, 
+      message: 'Could not discard changes.' 
+    };
+  }
+};

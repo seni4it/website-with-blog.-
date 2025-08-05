@@ -30,11 +30,18 @@ import {
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  GripVertical
+  GripVertical,
+  Upload,
+  Globe, 
+  Zap,
+  Undo,
+  Redo,
+  X
 } from "lucide-react";
 import { BlogPost, getAllPosts, getPostBySlug } from "@/lib/markdown";
 import { uploadImage, getBlogPageContent, saveBlogPageContent, BlogPageContent } from "@/lib/blogPageContent";
 import { getHomePageContent, saveHomePageContent } from "@/lib/homePageContent";
+import { publishWebsite, discardChanges, ContentManager } from "@/lib/githubIntegration";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -91,6 +98,11 @@ const ImprovedUniversalAdmin = () => {
   
   // Preview update key to force iframe refresh
   const [previewKey, setPreviewKey] = useState(0);
+  
+  // Content management for undo/redo
+  const [contentManager] = useState(() => ContentManager.getInstance());
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
   const categories = [
     'Clinical Cases',
@@ -230,7 +242,49 @@ const ImprovedUniversalAdmin = () => {
   // Load data
   useEffect(() => {
     loadAllData();
+    updateUndoRedoState();
   }, []);
+
+  // Debounced snapshot saving - captures changes after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (blogPageContent && Object.keys(blogPageContent).length > 0) {
+        saveContentSnapshot(`Blog content changed`);
+      }
+    }, 1000); // Save 1 second after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [blogPageContent]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (homePageData && Object.keys(homePageData).length > 0) {
+        saveContentSnapshot(`Home page changed`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [homePageData]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (currentPost && Object.keys(currentPost).length > 0) {
+        saveContentSnapshot(`Blog post edited: ${currentPost.title || 'Untitled'}`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentPost]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (posts.length > 0) {
+        saveContentSnapshot(`Posts updated`);
+      }
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [posts]);
 
   const loadAllData = async () => {
     try {
@@ -432,6 +486,116 @@ const ImprovedUniversalAdmin = () => {
     }
   };
 
+  // Update undo/redo state
+  const updateUndoRedoState = () => {
+    setCanUndo(contentManager.canUndo());
+    setCanRedo(contentManager.canRedo());
+  };
+
+  // Save content snapshot for undo/redo
+  const saveContentSnapshot = (description: string) => {
+    contentManager.saveSnapshot(
+      description,
+      blogPageContent,
+      homePageData,
+      posts
+    );
+    updateUndoRedoState();
+  };
+
+  const handlePublish = async () => {
+    // Save current state before publishing
+    saveContentSnapshot(`Published website - ${new Date().toLocaleString()}`);
+    
+    const result = await publishWebsite();
+    toast({
+      title: result.success ? "Ready to Publish!" : "Error",
+      description: result.message,
+      variant: result.success ? "default" : "destructive"
+    });
+  };
+
+  const handleDiscard = async () => {
+    const result = await discardChanges();
+    
+    if (result.success && (result as any).snapshot) {
+      const snapshot = (result as any).snapshot;
+      // Restore ALL content from snapshot
+      setBlogPageContent(snapshot.blogContent);
+      setHomePageData(snapshot.homeContent);
+      setPosts(snapshot.posts);
+      
+      // Also restore currentPost if we're editing a blog post
+      if (selectedPage?.type === 'blog-post' && selectedPage.content) {
+        const restoredPost = snapshot.posts.find((p: any) => p.id === selectedPage.content.id);
+        if (restoredPost) {
+          setCurrentPost(restoredPost);
+        }
+      }
+      
+      // Force preview update
+      setPreviewKey(prev => prev + 1);
+    }
+    
+    updateUndoRedoState();
+    
+    toast({
+      title: result.success ? "Changes Discarded" : "Cannot Discard",
+      description: result.message,
+      variant: result.success ? "default" : "destructive"
+    });
+  };
+
+  const handleUndo = () => {
+    const snapshot = contentManager.undo();
+    if (snapshot) {
+      setBlogPageContent(snapshot.blogContent);
+      setHomePageData(snapshot.homeContent);
+      setPosts(snapshot.posts);
+      
+      // Also restore currentPost if we're editing a blog post
+      if (selectedPage?.type === 'blog-post' && selectedPage.content) {
+        const restoredPost = snapshot.posts.find((p: any) => p.id === selectedPage.content.id);
+        if (restoredPost) {
+          setCurrentPost(restoredPost);
+        }
+      }
+      
+      setPreviewKey(prev => prev + 1);
+      
+      toast({
+        title: "Undo",
+        description: `Reverted: ${snapshot.description}`
+      });
+    }
+    updateUndoRedoState();
+  };
+
+  const handleRedo = () => {
+    const snapshot = contentManager.redo();
+    if (snapshot) {
+      setBlogPageContent(snapshot.blogContent);
+      setHomePageData(snapshot.homeContent);
+      setPosts(snapshot.posts);
+      
+      // Also restore currentPost if we're editing a blog post
+      if (selectedPage?.type === 'blog-post' && selectedPage.content) {
+        const restoredPost = snapshot.posts.find((p: any) => p.id === selectedPage.content.id);
+        if (restoredPost) {
+          setCurrentPost(restoredPost);
+        }
+      }
+      
+      setPreviewKey(prev => prev + 1);
+      
+      toast({
+        title: "Redo",
+        description: `Restored: ${snapshot.description}`
+      });
+    }
+    updateUndoRedoState();
+  };
+
   // Real-time preview component with direct iframe updates
   const RealtimePreview = () => {
     const [iframeKey, setIframeKey] = useState(0);
@@ -579,8 +743,51 @@ const ImprovedUniversalAdmin = () => {
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Undo/Redo buttons */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleUndo}
+                disabled={!canUndo}
+                title="Undo last change"
+              >
+                <Undo className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRedo}
+                disabled={!canRedo}
+                title="Redo last change"
+              >
+                <Redo className="h-4 w-4" />
+              </Button>
+              
+              {/* Main action buttons */}
+              <div className="border-l pl-2 ml-2 flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDiscard}
+                  title="Discard changes (undo to last saved version)"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Not Publish
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handlePublish}
+                  title="Publish website (remove admin + push to Git)"
+                >
+                  <Globe className="h-4 w-4 mr-1" />
+                  Publish
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 text-sm text-muted-foreground">
               <Monitor className="h-4 w-4" />
               Edit All Pages - Real-time Preview
             </div>
